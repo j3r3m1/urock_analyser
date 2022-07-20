@@ -77,7 +77,9 @@ class URockPostprocessorAlgorithm(QgsProcessingAlgorithm):
     # Input variables
     JAVA_PATH = "JAVA_PATH"
     INPUT_LINES = 'INPUT_LINES'
+    INPUT_POLYGONS = 'INPUT_POLYGONS'
     ID_FIELD_LINES = "ID_FIELD_LINES"
+    ID_FIELD_POLYGONS = "ID_FIELD_POLYGONS"
     INPUT_WIND_FILE = 'INPUT_WIND_FILE'
     IS_STREAM = 'IS_STREAM'
     SHOW_PLOT = 'SHOW_PLOT'
@@ -109,12 +111,13 @@ class URockPostprocessorAlgorithm(QgsProcessingAlgorithm):
             saveJavaDir(javaPath = javaDirDefault,
                         pluginDirectory = plugin_directory)
 
-        # We add the input vector features source. It can have only lines
+        # We add the input vector features source (line layer)
         self.addParameter(
             QgsProcessingParameterFeatureSource(
                 self.INPUT_LINES,
-                self.tr('Input layer'),
-                [QgsProcessing.TypeVectorLine]
+                self.tr('Input lines layer'),
+                [QgsProcessing.TypeVectorLine],
+                optional = True
             )
         )
         self.addParameter(
@@ -123,7 +126,25 @@ class URockPostprocessorAlgorithm(QgsProcessingAlgorithm):
                 self.tr('Lines ID field'),
                 None,
                 self.INPUT_LINES,
-                QgsProcessingParameterField.Numeric))
+                QgsProcessingParameterField.Numeric,
+                optional = True))
+        # We add the input vector features source (polygon layer)
+        self.addParameter(
+            QgsProcessingParameterFeatureSource(
+                self.INPUT_POLYGONS,
+                self.tr('Input polygons layer'),
+                [QgsProcessing.TypeVectorPolygon],
+                optional = True
+            )
+        )
+        self.addParameter(
+            QgsProcessingParameterField(
+                self.ID_FIELD_POLYGONS,
+                self.tr('Polygons ID field'),
+                None,
+                self.INPUT_POLYGONS,
+                QgsProcessingParameterField.Numeric,
+                optional = True))
         # We add the input wind speed saved in a NetCDF format
         self.addParameter(
             QgsProcessingParameterFile(
@@ -188,11 +209,31 @@ class URockPostprocessorAlgorithm(QgsProcessingAlgorithm):
         # Get line layer, id field name and then file directory and crs
         inputLines = self.parameterAsVectorLayer(parameters, self.INPUT_LINES, context)
         idLines = self.parameterAsString(parameters, self.ID_FIELD_LINES, context)
-        lines_file = str(inputLines.dataProvider().dataSourceUri())
-        if lines_file.count("|") > 0:
-            lines_file = lines_file.split("|")[0]
-        srid_lines = inputLines.crs().srsid()
+        if inputLines:
+            lines_file = str(inputLines.dataProvider().dataSourceUri())
+            if lines_file.count("|") > 0:
+                lines_file = lines_file.split("|")[0]
+            srid_lines = inputLines.crs().srsid()
+        else:
+            lines_file = ''
+            srid_lines = None
+        
+        # Get polygon layer, id field name and then file directory and crs
+        inputPolygons = self.parameterAsVectorLayer(parameters, self.INPUT_POLYGONS, context)
+        idPolygons = self.parameterAsString(parameters, self.ID_FIELD_POLYGONS, context)
+        if inputPolygons:
+            polygons_file = str(inputPolygons.dataProvider().dataSourceUri())
+            if polygons_file.count("|") > 0:
+                polygons_file = polygons_file.split("|")[0]
+            srid_polygons = inputPolygons.crs().srsid()
+        else:
+            polygons_file = ''
+            srid_polygons = None
 
+        if inputLines and inputPolygons:
+            if srid_polygons != srid_lines:
+                feedback.pushInfo('Coordinate system of input building layer and vegetation layer differ!')
+            
         # Defines outputs
         isStream = self.parameterAsBool(parameters, self.IS_STREAM, context)
         showPlot = self.parameterAsBool(parameters, self.SHOW_PLOT, context)
@@ -208,15 +249,19 @@ class URockPostprocessorAlgorithm(QgsProcessingAlgorithm):
                 feedback.pushInfo('The output directory does not exist, neither its parent directory')
         
         # Start the postprocessor
-        plotSectionalViews(pluginDirectory = plugin_directory, 
-                            inputWindFile = inputWindFile,
-                            lines_file = lines_file,
-                            srid_lines = srid_lines,
-                            idLines = idLines, 
-                            isStream = isStream,
-                            savePlot = savePlot,
-                            outputDirectory = outputDirectory,
-                            simulationName = simulationName)
+        fig, ax, scale, fig_poly, ax_poly =\
+            plotSectionalViews(pluginDirectory = plugin_directory, 
+                               inputWindFile = inputWindFile,
+                               lines_file = lines_file,
+                               srid_lines = srid_lines,
+                               idLines = idLines, 
+                               polygons_file = polygons_file,
+                               srid_polygons = srid_polygons,
+                               idPolygons = idPolygons, 
+                               isStream = isStream,
+                               savePlot = savePlot,
+                               outputDirectory = outputDirectory,
+                               simulationName = simulationName)
         if showPlot:
             plt.show()
         
