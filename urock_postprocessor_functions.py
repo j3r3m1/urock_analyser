@@ -35,7 +35,8 @@ def plotSectionalViews(pluginDirectory, inputWindFile, lines_file='', srid_lines
                        outputDirectory = None, simulationName = "",
                        fig = None, ax = None, scale = None, color = None):
 
-    plt.ioff()
+    if savePlot:
+        plt.ioff()
     # Set the SRID for work (by default use the srid_lines if exists)
     if srid_polygons and not srid_lines:
         srid_all = srid_polygons
@@ -226,7 +227,7 @@ def plotSectionalViews(pluginDirectory, inputWindFile, lines_file='', srid_lines
         uniques_z = pd.unique(df_selectedPoints[Z.upper()])
         # Need to reindex regularly values for stream plot
         if isStream:
-            uniques_z[0] = 0 - float(horiz_res) / 2
+            uniques_z[uniques_z == 0] = 0 - float(horiz_res) / 2
             df_selectedPoints[Z.upper()] = df_selectedPoints[Z.upper()].replace(0, 0 - float(horiz_res) / 2)
             dic_all = {id_line : {zval : df_selectedPoints[(df_selectedPoints[idLines.upper()] == id_line) &
                                                             (df_selectedPoints[Z.upper()] == zval)].groupby("DIST").mean()
@@ -244,7 +245,7 @@ def plotSectionalViews(pluginDirectory, inputWindFile, lines_file='', srid_lines
                                                                                                        horiz_res)))
                                       for zval in dic_all[id_line]}
                            for id_line in dic_all}
-        
+                                               
         if not fig and not ax:
             fig = {}
             ax = {}
@@ -253,7 +254,6 @@ def plotSectionalViews(pluginDirectory, inputWindFile, lines_file='', srid_lines
         for line in sorted(set(df_selectedPoints[idLines.upper()])):
             if not fig.get(line) and not ax.get(line):
                 fig[line], ax[line] = plt.subplots(figsize = (15,7))
-            ax[line].set_title("Line {0}".format(line))
             df_plot = df_selectedPoints[df_selectedPoints[idLines.upper()] == line].groupby([Z.upper(), "DIST"]).mean()
             
             if isStream:
@@ -322,6 +322,8 @@ def plotSectionalViews(pluginDirectory, inputWindFile, lines_file='', srid_lines
                 ax[line].add_patch(rect[i])
             if savePlot:
                 fig[line].savefig(os.path.join(outputDirectory, simulationName + "_line" + str(line) + ".png"))
+            else:
+                ax[line].set_title("Line {0}".format(line))
 
     return fig, ax, scale, fig_poly, ax_poly
             
