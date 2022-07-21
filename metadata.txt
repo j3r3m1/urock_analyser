@@ -3,14 +3,14 @@
 # This file should be included when you package your plugin.# Mandatory items:
 
 [general]
-name=URock postprocessor
+name=URock analyser
 qgisMinimumVersion=3.0
-description=Post process results of URock plugin
+description=Analyse results of URock plugin
 version=0.1
 author=Jérémy Bernard, University of Gothenburg
 email=jeremy.bernard@zaclys.net
 
-about=Plot a sectional view of the wind speed along horizontal lines
+about=Plot a sectional view of the wind speed along horizontal lines and mean vertical wind profiles within polygons
 
 tracker=http://bugs
 repository=http://repo

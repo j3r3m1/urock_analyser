@@ -1,7 +1,7 @@
 Plugin Builder Results
 
 Your plugin URockPostprocessor was created in:
-    /home/decide/Code/Python/urock_postprocessor
+    /home/decide/Code/Python/urock_analyser
 
 Your QGIS plugin directory is located at:
     /home/decide/.local/share/QGIS/QGIS3/profiles/default/python/plugins
@@ -15,7 +15,7 @@ What's Next:
 
   * Test the plugin by enabling it in the QGIS plugin manager
 
-  * Customize it by editing the implementation file: ``urock_postprocessor.py``
+  * Customize it by editing the implementation file: ``urock_analyser.py``
 
   * You can use the Makefile to compile your Ui and resource files when
     you make changes. This requires GNU make (gmake)

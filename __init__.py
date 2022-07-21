@@ -35,5 +35,5 @@ def classFactory(iface):  # pylint: disable=invalid-name
     :type iface: QgsInterface
     """
     #
-    from .urock_postprocessor import URockPostprocessorPlugin
-    return URockPostprocessorPlugin()
+    from .urock_analyser import URockAnalyserPlugin
+    return URockAnalyserPlugin()
