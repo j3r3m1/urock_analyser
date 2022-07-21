@@ -50,7 +50,6 @@ from qgis.core import (QgsProcessing,
 from qgis.utils import iface
 import os
 from pathlib import Path
-import matplotlib.pylab as plt
 
 from urock_processing.H2gisConnection import getJavaDir, setJavaDir, saveJavaDir
 from .urock_postprocessor_functions import plotSectionalViews
@@ -82,19 +81,17 @@ class URockPostprocessorAlgorithm(QgsProcessingAlgorithm):
     ID_FIELD_POLYGONS = "ID_FIELD_POLYGONS"
     INPUT_WIND_FILE = 'INPUT_WIND_FILE'
     IS_STREAM = 'IS_STREAM'
-    SHOW_PLOT = 'SHOW_PLOT'
     SAVE_PLOT = 'SAVE_PLOT'
     OUTPUT_DIRECTORY = 'OUTPUT_DIRECTORY'
     SIMULATION_NAME = "SIMULATION_NAME"
-    
-    # Close all existing matplotlib windows to avoid memory consumption
-    plt.close("all")
+
 
     def initAlgorithm(self, config):
         """
         Here we define the inputs and output of the algorithm, along
         with some other properties.
         """
+        
         # Get the plugin directory to save some useful files
         plugin_directory = self.plugin_dir = os.path.dirname(__file__)
         
@@ -162,11 +159,6 @@ class URockPostprocessorAlgorithm(QgsProcessingAlgorithm):
                 defaultValue=False))
         self.addParameter(
             QgsProcessingParameterBoolean(
-                self.SHOW_PLOT,
-                self.tr("Display the figure(s)"),
-                defaultValue=True))
-        self.addParameter(
-            QgsProcessingParameterBoolean(
                 self.SAVE_PLOT,
                 self.tr("Save the figure(s)"),
                 defaultValue=False))
@@ -181,7 +173,6 @@ class URockPostprocessorAlgorithm(QgsProcessingAlgorithm):
             QgsProcessingParameterFolderDestination(
                 self.OUTPUT_DIRECTORY,
                 self.tr('Directory to save the figure(s)'),
-                defaultValue = '',
                 optional = True))
         
         # Optional parameter
@@ -197,6 +188,7 @@ class URockPostprocessorAlgorithm(QgsProcessingAlgorithm):
         """
         Here is where the processing itself takes place.
         """
+        
         # Get the plugin directory to save some useful files
         plugin_directory = self.plugin_dir = os.path.dirname(__file__)
 
@@ -236,11 +228,10 @@ class URockPostprocessorAlgorithm(QgsProcessingAlgorithm):
             
         # Defines outputs
         isStream = self.parameterAsBool(parameters, self.IS_STREAM, context)
-        showPlot = self.parameterAsBool(parameters, self.SHOW_PLOT, context)
         savePlot = self.parameterAsBool(parameters, self.SAVE_PLOT, context)
         simulationName = self.parameterAsString(parameters, self.SIMULATION_NAME, context)
         outputDirectory = self.parameterAsString(parameters, self.OUTPUT_DIRECTORY, context)
-        
+
         # Creates the output folder if it does not exist
         if not os.path.exists(outputDirectory) and outputDirectory != '':
             if os.path.exists(Path(outputDirectory).parent.absolute()):
@@ -262,8 +253,6 @@ class URockPostprocessorAlgorithm(QgsProcessingAlgorithm):
                                savePlot = savePlot,
                                outputDirectory = outputDirectory,
                                simulationName = simulationName)
-        if showPlot:
-            plt.show()
         
         # Return the results of the algorithm.
         return {self.OUTPUT_DIRECTORY: outputDirectory}

@@ -3,7 +3,7 @@
 """
 Created on Wed Jan 19 13:09:33 2022
 
-@author: decide
+@author: Jérémy Bernard, University of Gothenburg (Sweden)
 """
 
 import xarray as xr
@@ -30,11 +30,12 @@ HEAD_AXIS_LENGTH = 1.5
 WIDTH = 0.2
 
 def plotSectionalViews(pluginDirectory, inputWindFile, lines_file='', srid_lines=None,
-                       idLines='', isStream = False, savePlot = False, 
+                       idLines='', isStream = False, savePlot = False,
                        polygons_file='', srid_polygons=None, idPolygons='', 
                        outputDirectory = None, simulationName = "",
                        fig = None, ax = None, scale = None, color = None):
 
+    plt.ioff()
     # Set the SRID for work (by default use the srid_lines if exists)
     if srid_polygons and not srid_lines:
         srid_all = srid_polygons
@@ -148,12 +149,13 @@ def plotSectionalViews(pluginDirectory, inputWindFile, lines_file='', srid_lines
             fig_poly[w], ax_poly[w] = plt.subplots()
             for p in polygonsList:
                 data2plot = df_selectedPolygons[df_selectedPolygons[idPolygons.upper()] == p].sort_values(Z)
-                ax_poly[w].plot(data2plot[w.upper()], data2plot[Z], label = p)
+                ax_poly[w].plot(data2plot[w.upper()], data2plot[Z], label = "Polygon {0}".format(p))
                 ax_poly[w].set_xlabel(windList[w]),
                 ax_poly[w].set_ylabel("Height above ground (m)")
+                plt.legend()
             if savePlot:
                 fig_poly[w].savefig(os.path.join(outputDirectory,
-                                                 simulationName + "_polygon" + str(p) + ".png"))
+                                                 simulationName + "_" + w + ".png"))
             
     
     # DEAL WITH LINES (ALONG LINE VERTICAL PROFILES)
@@ -320,7 +322,7 @@ def plotSectionalViews(pluginDirectory, inputWindFile, lines_file='', srid_lines
                 ax[line].add_patch(rect[i])
             if savePlot:
                 fig[line].savefig(os.path.join(outputDirectory, simulationName + "_line" + str(line) + ".png"))
-            
+
     return fig, ax, scale, fig_poly, ax_poly
             
 def conditional_interpolate(df, cols, limit = 2):
