@@ -272,7 +272,10 @@ def plotSectionalViews(pluginDirectory, inputWindFile, lines_file='', srid_lines
                 wind_z = np.array([[df_plot.loc[zval, d][WINDSPEED_Z.upper()] for d in uniques_dist] for zval in uniques_z])
                 
                 if not scale.get(line):
-                    scale[line] = np.median(np.abs(wind_d)) / (1.5 * horiz_res)
+                    if np.max(np.abs(wind_d)) > 3 * np.median(np.abs(wind_d)):
+                        scale[line] = np.max(np.abs(wind_d)) / (1.5 * horiz_res)
+                    else:
+                        scale[line] = np.median(np.abs(wind_d)) / (1.5 * horiz_res)
                 Q = ax[line].quiver(D, z, wind_d, wind_z, 
                                     units = 'xy', scale = scale[line],
                                     headwidth = HEAD_WIDTH, headlength = HEAD_LENGTH,
