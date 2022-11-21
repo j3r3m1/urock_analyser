@@ -46,10 +46,12 @@ from qgis.core import (QgsProcessing,
                        QgsProject,
                        QgsProcessingContext,
                        QgsProcessingParameterEnum,
-                       QgsProcessingParameterFile)
+                       QgsProcessingParameterFile,
+                       QgsProcessingException)
 from qgis.utils import iface
 import os
 from pathlib import Path
+import struct
 
 from urock_processing.H2gisConnection import getJavaDir, setJavaDir, saveJavaDir
 from .urock_analyser_functions import plotSectionalViews
@@ -97,12 +99,14 @@ class URockAnalyserAlgorithm(QgsProcessingAlgorithm):
         # Get the default value of the Java environment path if already exists
         javaDirDefault = getJavaDir(plugin_directory)
         
-        # Inform the user that the Java version should be 64 bits
-        if "Program Files (x86)" in javaDirDefault:
-            iface.ValueError(""""Only a 32 bits version of Java has been found \
-                             on your computer. Please consider installing Java 64 bits.""")
-        else:
-            # Set a Java dir if not exist and save it into a file in the plugin repository
+        if not javaDirDefault:  # Raise an error if could not find a Java installation
+            raise QgsProcessingException("No Java installation found")            
+        elif ("Program Files (x86)" in javaDirDefault) and (struct.calcsize("P") * 8 != 32):
+            # Raise an error if Java is 32 bits but Python 64 bits
+            raise QgsProcessingException('Only a 32 bits version of Java has been'+
+                                         'found while your Python installation is 64 bits.'+
+                                         'Consider installing a 64 bits Java version.')
+        else:   # Set a Java dir if not exist and save it into a file in the plugin repository
             setJavaDir(javaDirDefault)
             saveJavaDir(javaPath = javaDirDefault,
                         pluginDirectory = plugin_directory)
@@ -219,7 +223,7 @@ class URockAnalyserAlgorithm(QgsProcessingAlgorithm):
 
         if inputLines and inputPolygons:
             if srid_polygons != srid_lines:
-                feedback.pushInfo('Coordinate system of input building layer and vegetation layer differ!')
+                feedback.pushWarning('Coordinate system of input building layer and vegetation layer differ!')
             
         # Defines outputs
         isStream = self.parameterAsBool(parameters, self.IS_STREAM, context)
@@ -231,7 +235,7 @@ class URockAnalyserAlgorithm(QgsProcessingAlgorithm):
             if os.path.exists(Path(outputDirectory).parent.absolute()):
                 os.mkdir(outputDirectory)
             else:
-                feedback.pushInfo('The output directory does not exist, neither its parent directory')
+                raise QgsProcessingException('The output directory does not exist, neither its parent directory')
         
         # Start the analyser
         fig, ax, scale, fig_poly, ax_poly =\
@@ -287,6 +291,21 @@ class URockAnalyserAlgorithm(QgsProcessingAlgorithm):
 
     def tr(self, string):
         return QCoreApplication.translate('Processing', string)
+
+    def shortHelpString(self):
+        return self.tr('The URock Analyser plugin can be used to plot the results '+
+                       'obtained using the URock model along the vertical axis.'+
+                       ' This plugin is available only from UMEP for processing <UMEPforProcessing>.\n\n'
+                       'Rem: The plug-in performance is far from optimum since the '+
+                       'NetCDF file is loaded in Java AND in Python. '+
+                       'Thus it could take some time if the NetCDF file is large.'
+        '\n'
+        '---------------\n'
+        'Full manual available via the <b>Help</b>-button.')
+
+    def helpUrl(self):
+        url = "https://github.com/j3r3m1/UMEP-Docs/blob/urock_processing/docs/source/post_processor/Wind%20model%20URock%20Analyser.rst"
+        return url
 
     def createInstance(self):
         return URockAnalyserAlgorithm()
